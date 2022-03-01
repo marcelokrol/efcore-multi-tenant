@@ -1,0 +1,1 @@
+﻿add-migration $args[0] -o Migrations\tenant -c CustomerDataContext

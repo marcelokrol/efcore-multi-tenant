@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WebApi.MultiTenant.Configuration;
+using WebApi.MultiTenant.Models;
 
 namespace WebApi.MultiTenant.Data
 {
@@ -23,14 +25,27 @@ namespace WebApi.MultiTenant.Data
                 // If you need to perform any validation like if the customer exists
                 // or if it has a valid subscription you can request a master context
                 // and perform validations
-                //var masterContext = provider.GetService<MasterDataContext>();
+                var masterContext = provider.GetService<MasterDataContext>();
+                var empresa = masterContext.Customers.Where(l => l.Slug == clientSlug);
+
+                if (!empresa.Any())
+                {
+                   throw new Exception($"Empresa: {clientSlug} não esta registrada em nosso sistema!");
+                }
 
                 var connString = configuration.GetClientConnectionString(clientSlug);
                 var opts = new DbContextOptionsBuilder<CustomerDataContext>();
-                opts.UseSqlServer(connString, s => s.EnableRetryOnFailure());
+                opts.UseNpgsql(connString, s => s.EnableRetryOnFailure());
                 opts.EnableSensitiveDataLogging();
 
-                return new CustomerDataContext(opts.Options);
+                var customerData= new CustomerDataContext(opts.Options);
+
+                if (customerData.Database.GetPendingMigrations().Any())
+                   customerData.Database.Migrate();
+
+                customerData.Database.EnsureCreated();
+
+               return customerData;
             });
         }
     }

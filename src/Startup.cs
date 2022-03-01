@@ -23,7 +23,7 @@ namespace WebApi.MultiTenant
             services.AddControllers();
 
             services.AddDbContext<MasterDataContext>(c =>
-                c.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                c.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddCustomerDbContext(Configuration);
